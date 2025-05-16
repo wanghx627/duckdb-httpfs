@@ -7,6 +7,7 @@ namespace duckdb {
 
 void CreateS3SecretFunctions::Register(DatabaseInstance &instance) {
 	RegisterCreateSecretFunction(instance, "s3");
+        RegisterCreateSecretFunction(instance, "ks3");
 	RegisterCreateSecretFunction(instance, "aws");
 	RegisterCreateSecretFunction(instance, "r2");
 	RegisterCreateSecretFunction(instance, "gcs");
@@ -37,6 +38,8 @@ unique_ptr<BaseSecret> CreateS3SecretFunctions::CreateSecretFunctionInternal(Cli
 			scope.push_back("s3a://");
 		} else if (input.type == "r2") {
 			scope.push_back("r2://");
+                } else if (input.type == "ks3") {
+                        scope.push_back("ks3://");
 		} else if (input.type == "gcs") {
 			scope.push_back("gcs://");
 			scope.push_back("gs://");
