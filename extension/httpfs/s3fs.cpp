@@ -174,7 +174,7 @@ S3AuthParams S3AuthParams::ReadFrom(optional_ptr<FileOpener> opener, FileOpenerI
 		return result;
 	}
 
-	const char *secret_types[] = {"s3", "r2", "gcs", "aws"};
+	const char *secret_types[] = {"s3", "r2", "gcs", "aws", "ks3"};
 	KeyValueSecretReader secret_reader(*opener, info, secret_types, 3);
 
 	// These settings we just set or leave to their S3AuthParams default value
@@ -552,13 +552,13 @@ void S3FileSystem::ReadQueryParams(const string &url_query_param, S3AuthParams &
 }
 
 static string GetPrefix(string url) {
-	const string prefixes[] = {"s3://", "s3a://", "s3n://", "gcs://", "gs://", "r2://"};
+	const string prefixes[] = {"s3://", "s3a://", "s3n://", "gcs://", "gs://", "r2://", "ks3://"};
 	for (auto &prefix : prefixes) {
 		if (StringUtil::StartsWith(url, prefix)) {
 			return prefix;
 		}
 	}
-	throw IOException("URL needs to start with s3://, gcs:// or r2://");
+	throw IOException("URL needs to start with s3://, gcs:// or r2:// or ks3://");
 	return string();
 }
 
@@ -832,7 +832,7 @@ void S3FileHandle::Initialize(optional_ptr<FileOpener> opener) {
 			auto context = opener->TryGetClientContext();
 			if (context) {
 				auto transaction = CatalogTransaction::GetSystemCatalogTransaction(*context);
-				for (const string type : {"s3", "r2", "gcs", "aws"}) {
+				for (const string type : {"s3", "r2", "gcs", "aws", "ks3"}) {
 					auto res = context->db->GetSecretManager().LookupSecret(transaction, path, type);
 					if (res.HasMatch()) {
 						refreshed_secret |= CreateS3SecretFunctions::TryRefreshS3Secret(*context, *res.secret_entry);
@@ -871,7 +871,7 @@ void S3FileHandle::Initialize(optional_ptr<FileOpener> opener) {
 bool S3FileSystem::CanHandleFile(const string &fpath) {
 
 	return fpath.rfind("s3://", 0) * fpath.rfind("s3a://", 0) * fpath.rfind("s3n://", 0) * fpath.rfind("gcs://", 0) *
-	           fpath.rfind("gs://", 0) * fpath.rfind("r2://", 0) ==
+	           fpath.rfind("gs://", 0) * fpath.rfind("r2://", 0) * fpath.rfind("ks3://", 0)  ==
 	       0;
 }
 
